@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group
+        android:id="@+id/main_group"
+        android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_login"
+            android:icon="@drawable/ic_account_circle_white"
+            android:title="@string/login" />
+        <item
+            android:id="@+id/nav_posts"
+            android:icon="@drawable/ic_image_white_24px"
+            android:title="@string/posts" />
+        <item
+            android:id="@+id/nav_comments"
+            android:icon="@drawable/ic_comment_white"
+            android:title="@string/comments" />
+        <item
+            android:id="@+id/nav_pools"
+            android:icon="@drawable/ic_collections_white"
+            android:title="@string/pools" />
+    </group>
+    <group
+        android:id="@+id/dev_group"
+        android:checkableBehavior="single">
+
+        <item
+            android:id="@+id/nav_dev_json"
+            android:title="View Data Model" />
+
+        <item
+            android:id="@+id/nav_dev_console"
+            android:title="Developer Console" />
+
+    </group>
+
+
+</menu>

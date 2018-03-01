@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Æ621</string>
+    <string name="login">Login</string>
+    <string name="my_account">My Account</string>
+    <string name="posts">Posts</string>
+    <string name="comments">Comments</string>
+    <string name="pools">Pools</string>
+    <string name="title_activity_post_view">Viewing Post: #</string>
+</resources>
