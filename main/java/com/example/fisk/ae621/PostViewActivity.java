@@ -68,6 +68,7 @@ public class PostViewActivity extends AppCompatActivity {
 
             // Fill widgets
             // Todo: There should be at least 2 modes of scale: Fill Screen, and Actual Resolution
+            // Todo: Don't forget about this character ▼
             try {
 
                 Glide.with(this).load(mPostData.getString("file_url")).into(mMainImage);

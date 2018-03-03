@@ -161,7 +161,7 @@ public class MainActivity extends AppCompatActivity implements PostItemAdapter.P
                         break;
                     case R.id.nav_dev_json:
                         //Todo: This is the next logical target for activity conversion. Fix this ASAP!
-                        //transaction.replace(R.id.pageView, fDevJson);
+                        gotoDataModelViewer();
                         break;
                 }
 
@@ -175,27 +175,12 @@ public class MainActivity extends AppCompatActivity implements PostItemAdapter.P
 
     private void initializeRecyclerView() {
 
-        DisplayMetrics displayMetrics = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-
-        int width  = (int) (displayMetrics.widthPixels / displayMetrics.density);
-        int maxThumbnailWidth = 175;
-
-        int numberOfColumns = width / maxThumbnailWidth;
-
         mRecyclerView = (RecyclerView      ) findViewById(R.id.recyclerView         );
         mSwipeLayout  = (SwipeRefreshLayout) findViewById(R.id.swipeRefreshLayout   );
 
-        mRecyclerView.setLayoutManager(new GridLayoutManager(this, numberOfColumns));
+        mRecyclerView.setLayoutManager(new GridLayoutManager(this, getNumberOfColumns()));
         VerticalSpaceItemDecoration verticalDecoration = new VerticalSpaceItemDecoration(100);
         mRecyclerView.addItemDecoration(verticalDecoration);
-        mRecyclerView.setOnScrollChangeListener(new View.OnScrollChangeListener() {
-            @Override
-            public void onScrollChange(View view, int i, int i1, int i2, int i3) {
-
-            }
-        });
-
         mSwipeLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
@@ -219,6 +204,15 @@ public class MainActivity extends AppCompatActivity implements PostItemAdapter.P
         queryTags = query;
     }
 
+    // #### Navigation Methods ####
+
+    private void gotoDataModelViewer() {
+        // Set the data for the selected post, and start the new activity
+        Intent intent = new Intent(MainActivity.this, DevDataModelViewerActivity.class);
+        intent.putExtra("data", postItemsData.toString());
+        startActivity(intent);
+    }
+
     // #### Recycler and Adapter methods ####
 
     @Override
@@ -238,6 +232,19 @@ public class MainActivity extends AppCompatActivity implements PostItemAdapter.P
         PostItemAdapter adapter = new PostItemAdapter(this, data);
         adapter.setClickListener(this);
         mRecyclerView.setAdapter(adapter);
+    }
+
+    private int getNumberOfColumns() {
+
+        // Determine the number of columns that can fit on the screen, given the actual width of the screen.
+
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+
+        int width  = (int) (displayMetrics.widthPixels / displayMetrics.density); // Display width, in density independent pixels.
+        int maxThumbnailWidth = 175;
+
+        return width / maxThumbnailWidth;
     }
 
     public void gotoPostView(JSONObject post) {

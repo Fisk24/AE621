@@ -56,6 +56,7 @@ public class PostItemAdapter extends RecyclerView.Adapter<PostItemAdapter.PostIt
         try {
             // Todo: create little flags for the thumbnails that signify if it is an animated post or a webm, like e621 does
             // Todo: Find a way to make the heart icon red, or at least white. Anything but black. (Is this color device dependent?, if so maybe replace with a drawable)
+            // Todo: Remove Flash based posts from the postView
             JSONObject post = mPostItems.getJSONObject(position);
 
             holder.postFavorite.setText("♥" + post.getString("fav_count"));
