@@ -18,6 +18,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -133,6 +134,7 @@ public class MainActivity extends AppCompatActivity implements PostItemAdapter.P
         // Navigation Drawer
         mDrawerLayout   = (DrawerLayout   ) findViewById(R.id.drawerLayout);
         mNavigationView = (NavigationView ) findViewById(R.id.nav_view);
+        mNavigationView.getMenu().findItem(R.id.nav_posts).setChecked(true); // Set the posts button as checked by default, because this is the post view.
         mNavigationView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
             @Override
             public boolean onNavigationItemSelected(@NonNull MenuItem item) {
@@ -150,7 +152,6 @@ public class MainActivity extends AppCompatActivity implements PostItemAdapter.P
                         //transaction.replace(R.id.pageView, fLogin);
                         break;
                     case R.id.nav_posts:
-                        //Todo: If we accept that the main activity IS this page, then it should be selected by default when the user starts the app.
                         break;
                     case R.id.nav_comments:
                         //transaction.replace(R.id.pageView, fCommentsIndex);
@@ -173,8 +174,14 @@ public class MainActivity extends AppCompatActivity implements PostItemAdapter.P
     }
 
     private void initializeRecyclerView() {
-        int numberOfColumns = 2; // Todo: <- determine this shit programmatically
-        // Todo: Find a way to make the heart icon red, or at least white. Anything but black. (Is this color device dependent?, if so maybe replace with a drawable)
+
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+
+        int width  = (int) (displayMetrics.widthPixels / displayMetrics.density);
+        int maxThumbnailWidth = 175;
+
+        int numberOfColumns = width / maxThumbnailWidth;
 
         mRecyclerView = (RecyclerView      ) findViewById(R.id.recyclerView         );
         mSwipeLayout  = (SwipeRefreshLayout) findViewById(R.id.swipeRefreshLayout   );
@@ -182,6 +189,12 @@ public class MainActivity extends AppCompatActivity implements PostItemAdapter.P
         mRecyclerView.setLayoutManager(new GridLayoutManager(this, numberOfColumns));
         VerticalSpaceItemDecoration verticalDecoration = new VerticalSpaceItemDecoration(100);
         mRecyclerView.addItemDecoration(verticalDecoration);
+        mRecyclerView.setOnScrollChangeListener(new View.OnScrollChangeListener() {
+            @Override
+            public void onScrollChange(View view, int i, int i1, int i2, int i3) {
+
+            }
+        });
 
         mSwipeLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override

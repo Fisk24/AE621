@@ -33,6 +33,8 @@ public class ApiDelegate {
     private String getRawJsonResponse(String urlString) {
         try {
             // Download
+            // Todo: Set the user-agent as per e621's guidelines
+            // Todo: ApiDeligate might be more useful with its own thread, instead of having AsyncTasks Everywhere
             URL url = new URL(urlString);
             InputStream inputStream = url.openConnection().getInputStream();
 

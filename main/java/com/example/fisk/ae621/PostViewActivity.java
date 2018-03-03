@@ -37,10 +37,10 @@ public class PostViewActivity extends AppCompatActivity {
     ImageView    mMainImage;
     TextView     mPostIdPrimary;
     TextView     mPostArtistPrimary;
+    LinearLayout mStatusLayout;
     LinearLayout mStatusFlagged;
     LinearLayout mStatusPending;
 
-    @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -62,6 +62,7 @@ public class PostViewActivity extends AppCompatActivity {
             mMainImage         = findViewById(R.id.pvMainImage);
             mPostIdPrimary     = findViewById(R.id.pvPostIdPrimary);
             mPostArtistPrimary = findViewById(R.id.pvPostArtistPrimary);
+            mStatusLayout      = findViewById(R.id.pvStatusLayout);
             mStatusFlagged     = findViewById(R.id.pvStatusFlaggedIndicator);
             mStatusPending     = findViewById(R.id.pvStatusPendingIndicator);
 
@@ -81,8 +82,7 @@ public class PostViewActivity extends AppCompatActivity {
                     mStatusFlagged.setVisibility(View.GONE);
                 }
                 else if (status.equals("active")) {
-                    mStatusFlagged.setVisibility(View.GONE);
-                    mStatusPending.setVisibility(View.GONE);
+                    mStatusLayout.setVisibility(View.GONE);
                 }
 
                 // Touch Gestures
@@ -92,7 +92,7 @@ public class PostViewActivity extends AppCompatActivity {
                         @Override
                         public boolean onDoubleTap(MotionEvent e) {
                             Log.d("TEST", "onDoubleTap");
-                            setScaleTypeRes();
+                            setScaleTypeFill();
                             return super.onDoubleTap(e);
                         }
 
@@ -127,11 +127,31 @@ public class PostViewActivity extends AppCompatActivity {
             int reportedThumbnailWidth = mPostData.getInt("height");
             int trueThumbnailWidth = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, reportedThumbnailWidth, this.getResources().getDisplayMetrics());
 
-            LinearLayout.LayoutParams thumbnailParams = new LinearLayout.LayoutParams(trueThumbnailHeight, trueThumbnailWidth);
+            LinearLayout.LayoutParams thumbnailParams = new LinearLayout.LayoutParams(trueThumbnailWidth, trueThumbnailHeight);
 
             mMainImage.setLayoutParams(thumbnailParams);
         } catch (JSONException e) {
             e.printStackTrace();
+        }
+    }
+
+    private void setScaleTypeFill() {
+        try {
+            LinearLayout contentLayout = findViewById(R.id.pvContentLayout);
+
+            // Data required for scaling
+            int parentLayoutWidth   = contentLayout.getWidth()-(contentLayout.getPaddingLeft()+contentLayout.getPaddingRight()); // account for layout padding
+            int postMainImageWidth  = mPostData.getInt("width");
+            int postMainImageHeight = mPostData.getInt("height");
+
+            // Scaling Formula Image Height
+            int scaledImageHeight = (postMainImageHeight*parentLayoutWidth)/postMainImageWidth;
+
+            LinearLayout.LayoutParams imageParams = new LinearLayout.LayoutParams(parentLayoutWidth, scaledImageHeight);
+            mMainImage.setLayoutParams(imageParams);
+        }
+        catch (JSONException e) {
+            Log.e("JSONException", "PostViewActivity.setScaleTypeFill(): "+e.toString());
         }
     }
 

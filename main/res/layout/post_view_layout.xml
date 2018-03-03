@@ -36,6 +36,7 @@
         android:layout_height="match_parent">
 
         <LinearLayout
+            android:id="@+id/pvContentLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="20dp"
@@ -44,7 +45,7 @@
             android:padding="10dp">
 
             <LinearLayout
-                android:id="@+id/pvStatus"
+                android:id="@+id/pvStatusLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="10dp"
@@ -122,8 +123,9 @@
                 android:id="@+id/pvMainImage"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_below="@+id/pvStatus"
+                android:layout_below="@+id/pvStatusLayout"
                 android:layout_centerHorizontal="true"
+                android:background="@drawable/rounded_rectangle_red"
                 app:srcCompat="@drawable/ic_launcher_background" />
 
         </LinearLayout>
