@@ -34,16 +34,6 @@
             android:textSize="14sp" />
 
         <TextView
-            android:id="@+id/textView10"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_column="0"
-            android:layout_row="1"
-            android:paddingBottom="10dp"
-            android:paddingTop="10dp"
-            android:text="Size:" />
-
-        <TextView
             android:id="@+id/textView11"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -59,15 +49,6 @@
             android:layout_height="wrap_content"
             android:layout_column="1"
             android:layout_row="0"
-            android:paddingLeft="10dp"
-            android:text="TextView" />
-
-        <TextView
-            android:id="@+id/dvDialogDataPointSizeOf"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_column="1"
-            android:layout_row="1"
             android:paddingLeft="10dp"
             android:text="TextView" />
 

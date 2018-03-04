@@ -10,25 +10,33 @@
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@android:color/background_light"
-        android:padding="10dp">
+        android:background="@android:color/background_light">
 
         <TextView
             android:id="@+id/pvPostIdPrimary"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentStart="true"
-            android:layout_alignParentTop="true"
+            android:layout_centerVertical="true"
+            android:layout_marginLeft="10dp"
             android:text="#123456:" />
 
         <TextView
             android:id="@+id/pvPostArtistPrimary"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignParentTop="true"
-            android:layout_marginLeft="10dp"
+            android:layout_centerVertical="true"
+            android:layout_marginStart="5dp"
             android:layout_toEndOf="@+id/pvPostIdPrimary"
             android:text="Artist's Name" />
+
+        <ImageButton
+            android:id="@+id/pvDevViewDataModelButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentEnd="true"
+            android:layout_centerVertical="true"
+            app:srcCompat="@drawable/ic_menu_manage" />
     </RelativeLayout>
 
     <ScrollView
@@ -61,16 +69,15 @@
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:background="@drawable/rounded_background_flagged"
-                        android:orientation="horizontal"
+                        android:orientation="vertical"
                         android:padding="5dp">
 
                         <TextView
-                            android:id="@+id/textView16"
+                            android:id="@+id/pvDelReason"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="This post was flagged for deletion"
-                            android:textAlignment="viewStart"
+                            android:text="Reason: Xyz"
                             android:textColor="@android:color/background_light" />
                     </LinearLayout>
 
@@ -103,7 +110,7 @@
                     android:padding="5dp">
 
                     <TextView
-                        android:id="@+id/textView4"
+                        android:id="@+id/pvChildPostHeader"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="► Child Posts (0)"
@@ -133,6 +140,7 @@
                         android:layout_height="wrap_content"
                         android:text="▼ Description"
                         android:textColor="@android:color/background_light"
+                        android:textSize="18sp"
                         android:textStyle="bold" />
 
                     <TextView
