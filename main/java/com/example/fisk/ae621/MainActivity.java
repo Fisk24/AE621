@@ -154,7 +154,7 @@ public class MainActivity extends AppCompatActivity implements PostItemAdapter.P
                     case R.id.nav_posts:
                         break;
                     case R.id.nav_comments:
-                        //transaction.replace(R.id.pageView, fCommentsIndex);
+                        gotoCommentIndex();
                         break;
                     case R.id.nav_pools:
                         //transaction.replace(R.id.pageView, fPoolsIndex);
@@ -210,6 +210,12 @@ public class MainActivity extends AppCompatActivity implements PostItemAdapter.P
         // Set the data for the selected post, and start the new activity
         Intent intent = new Intent(MainActivity.this, DevDataModelViewerActivity.class);
         intent.putExtra("data", postItemsData.toString());
+        startActivity(intent);
+    }
+
+    private void gotoCommentIndex() {
+        Intent intent = new Intent(MainActivity.this, CommentIndexActivity.class);
+        //intent.putExtra("data", postItemsData.toString());
         startActivity(intent);
     }
 

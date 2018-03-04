@@ -32,7 +32,7 @@ public class DevDataViewerDialogFragment extends DialogFragment {
         // Declare widgets
         TextView mDataPointKey    = view.findViewById(R.id.dvDialogDataPointKey   );
         TextView mDataPointType   = view.findViewById(R.id.dvDialogDataPointType  );
-        TextView mDataPointSizeOf = view.findViewById(R.id.dvDialogDataPointSizeOf);
+        //TextView mDataPointSizeOf = view.findViewById(R.id.dvDialogDataPointSizeOf);
         TextView mDataPointValue  = view.findViewById(R.id.dvDialogDataPointValue );
 
         // Set widgets

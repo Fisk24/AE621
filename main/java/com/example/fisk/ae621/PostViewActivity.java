@@ -15,6 +15,7 @@ import android.view.GestureDetector;
 import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
@@ -37,10 +38,23 @@ public class PostViewActivity extends AppCompatActivity {
     ImageView    mMainImage;
     TextView     mPostIdPrimary;
     TextView     mPostArtistPrimary;
+    ImageButton  mDevViewDataModel;
+
     LinearLayout mStatusLayout;
     LinearLayout mStatusFlagged;
     LinearLayout mStatusPending;
+    TextView     mDelReason;
 
+    LinearLayout mChildPostLayout;
+    TextView     mChildPostHeader;
+    boolean      isChildPostLayoutOpen;
+
+    LinearLayout mDescriptionLayout;
+    TextView     mDescriptionHeader;
+    TextView     mDescriptionBody;
+    boolean      isDescriptionOpen;
+
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -62,29 +76,37 @@ public class PostViewActivity extends AppCompatActivity {
             mMainImage         = findViewById(R.id.pvMainImage);
             mPostIdPrimary     = findViewById(R.id.pvPostIdPrimary);
             mPostArtistPrimary = findViewById(R.id.pvPostArtistPrimary);
+            mDevViewDataModel  = findViewById(R.id.pvDevViewDataModelButton);
+
             mStatusLayout      = findViewById(R.id.pvStatusLayout);
             mStatusFlagged     = findViewById(R.id.pvStatusFlaggedIndicator);
             mStatusPending     = findViewById(R.id.pvStatusPendingIndicator);
+            mDelReason         = findViewById(R.id.pvDelReason);
+
+            mChildPostLayout      = findViewById(R.id.pvChildPostsIndicator);
+            mChildPostHeader      = findViewById(R.id.pvChildPostHeader);
+            isChildPostLayoutOpen = true;
+
+            mDescriptionLayout = findViewById(R.id.pvDescriptionLayout);
+            mDescriptionHeader = findViewById(R.id.pvDescriptionHeader);
+            mDescriptionBody   = findViewById(R.id.pvDescriptionBody);
+            isDescriptionOpen  = true;
 
             // Fill widgets
+            // Todo: Add a link to the data model viewer so that the data model can be viewed per post.
             // Todo: There should be at least 2 modes of scale: Fill Screen, and Actual Resolution
-            // Todo: Don't forget about this character ▼
+            // Todo: Don't forget about this character ▼ or this one ►
             try {
 
                 Glide.with(this).load(mPostData.getString("file_url")).into(mMainImage);
                 mPostIdPrimary.setText(buildIdString(mPostData.getString("id")));
                 mPostArtistPrimary.setText(buildArtistString(mPostData.getString("artist")));
 
-                String status = mPostData.getString("status");
-                if (status.equals("flagged")) {
-                    mStatusPending.setVisibility(View.GONE);
-                }
-                else if (status.equals("pending")) {
-                    mStatusFlagged.setVisibility(View.GONE);
-                }
-                else if (status.equals("active")) {
-                    mStatusLayout.setVisibility(View.GONE);
-                }
+                setStatusBanner();
+
+                setChildPostWidgets();
+
+                setDescriptionWidgets();
 
                 // Touch Gestures
                 // Double Tap
@@ -98,7 +120,7 @@ public class PostViewActivity extends AppCompatActivity {
                         }
 
                     });
-
+                    @SuppressLint("ClickableViewAccessibility")
                     @Override
                     public boolean onTouch(View v, MotionEvent event) {
                         Log.d("TEST", "Raw event: " + event.getAction() + ", (" + event.getRawX() + ", " + event.getRawY() + ")");
@@ -107,8 +129,16 @@ public class PostViewActivity extends AppCompatActivity {
                     }
                 });
 
+                // Goto Data Model
+                mDevViewDataModel.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        gotoDataModelViewer();
+                    }
+                });
+
             } catch (JSONException e) {
-                Log.e("JSONException", "PostViewFragment.onActivityCreated(): "+e.toString());
+                Log.e("JSONException", "PostViewFragment.onCreate(): "+e.toString());
             }
 
         }
@@ -116,6 +146,94 @@ public class PostViewActivity extends AppCompatActivity {
             Log.e("PostViewFragment", "mPostData is not set!");
         }
 
+        if (savedInstanceState != null) {
+            isDescriptionOpen = savedInstanceState.getBoolean("desc_open");
+            setDescriptionWidgets();
+        }
+
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putBoolean("desc_open", isDescriptionOpen);
+        setDescriptionOpen(isDescriptionOpen);
+    }
+
+    private void setStatusBanner() {
+        String status = null;
+        try {
+            status = mPostData.getString("status");
+
+            switch (status) {
+                case "flagged":
+                    mStatusPending.setVisibility(View.GONE);
+                    mDelReason.setText(mPostData.getString("delreason"));
+                    break;
+                case "pending":
+                    mStatusFlagged.setVisibility(View.GONE);
+                    break;
+                case "active":
+                    mStatusLayout.setVisibility(View.GONE);
+                    break;
+            }
+        } catch (JSONException e) {
+            Log.e("JSONException", "PostViewFragment.setStatusBanner(): "+e.toString());
+        }
+    }
+
+    private void setChildPostWidgets() {
+        // children will have to be split by commas as it is a string in the data and not an array
+    }
+
+    private void setDescriptionWidgets() {
+        try {
+            if (mPostData.getString("description").equals("")) {
+                mDescriptionLayout.setVisibility(View.GONE);
+            }
+            else {
+                mDescriptionBody.setText(mPostData.getString("description"));
+                setDescriptionOpen(isDescriptionOpen);
+            }
+
+            // Toggle Description
+            mDescriptionHeader.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    toggleDescription();
+                }
+            });
+
+
+        } catch (JSONException e) {
+            Log.e("JSONException", "PostViewFragment.setDescriptionWidgets(): "+e.toString());
+        }
+    }
+
+    private void setDescriptionOpen(boolean open) {
+        if (!open) {
+            // if its open, then close it
+            mDescriptionHeader.setText("► Description");
+            mDescriptionBody.setVisibility(View.GONE);
+        }
+        else {
+            mDescriptionHeader.setText("▼ Description");
+            mDescriptionBody.setVisibility(View.VISIBLE);
+        }
+    }
+
+    private void toggleDescription() {
+        if (isDescriptionOpen) {
+            // if its open, then close it
+            mDescriptionHeader.setText("► Description");
+            mDescriptionBody.setVisibility(View.GONE);
+            isDescriptionOpen = false;
+        }
+        else {
+            mDescriptionHeader.setText("▼ Description");
+            mDescriptionBody.setVisibility(View.VISIBLE);
+            isDescriptionOpen = true;
+        }
     }
 
     private void setScaleTypeRes() {
@@ -176,6 +294,13 @@ public class PostViewActivity extends AppCompatActivity {
             Log.e("JSONException", "PostViewFragment.buildArtistString(): "+e.toString());
             return null;
         }
+    }
+
+    private void gotoDataModelViewer() {
+        // Set the data for the selected post, and start the new activity
+        Intent intent = new Intent(this, DevDataModelViewerActivity.class);
+        intent.putExtra("data", new JSONArray().put(mPostData).toString());
+        startActivity(intent);
     }
 
 }
