@@ -29,7 +29,8 @@
             android:name=".PostViewActivity"
             android:label="@string/title_activity_post_view"
             android:theme="@style/NoActionBarBlue" />
-        <activity android:name=".DevDataModelViewerActivity"></activity>
+        <activity android:name=".DevDataModelViewerActivity" />
+        <activity android:name=".CommentIndexActivity"></activity>
     </application>
 
 </manifest>
