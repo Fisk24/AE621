@@ -293,8 +293,6 @@ public class MainActivity extends AppCompatActivity implements PostItemAdapter.P
             ApiDelegate delegate = new ApiDelegate();
             JSONArray   response;
 
-
-
             try {
 
                 if (!queryTags.equals("")) {

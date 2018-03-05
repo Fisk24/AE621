@@ -4,6 +4,7 @@ import android.util.Log;
 
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -22,13 +23,19 @@ import java.net.URL;
 
 public class ApiDelegate {
 
-    String baseUrl = "https://e621.net";
-    String postIndex = "/post/index.json";
-    String commentIndex = "/comment/index.json";
-    String postShow = "/post/show.json";
-    String commentShow = "/comment/show.json";
+    private String baseUrl = "https://e621.net";
+    private String postIndex = "/post/index.json";
+    private String commentIndex = "/comment/index.json";
+    private String postShow = "/post/show.json";
+    private String commentShow = "/comment/show.json";
 
-    int postsPerPage = 75;
+    private int postsPerPage = 75;
+
+    private boolean doOmitFlash = true;
+
+    public void omitFlash(boolean choice) {
+        doOmitFlash = choice;
+    }
 
     private String getRawJsonResponse(String urlString) {
         try {
@@ -73,9 +80,32 @@ public class ApiDelegate {
         return stringBuilder.toString();
     }
 
+    private JSONArray removeFlashPosts(JSONArray data) {
+        String criteriaKey   = "file_ext";
+        String criteriaValue = "swf";
+
+        try {
+            for (int i = 0; i < data.length(); i++) {
+                JSONObject jsonObject = data.getJSONObject(i);
+                if (jsonObject.getString(criteriaKey).equals(criteriaValue)) {
+                    Log.i("ApiDelegate", "Removed flash oriented post id:"+jsonObject.getString("id")+" at index:"+i);
+                    data.remove(i);
+                }
+            }
+        } catch (JSONException e) {
+            Log.e("ApiDelegate", "removeFlashPosts(): " + e.toString());
+        }
+
+        return data;
+    }
+
     public JSONArray performBasicPostIndexQuery(int page) throws JSONException {
         String finalUrl = baseUrl+postIndex+"?limit="+postsPerPage+"&page="+page;
-    return new JSONArray(getRawJsonResponse(finalUrl));
+        JSONArray parsedData = new JSONArray(getRawJsonResponse(finalUrl));
+        if (doOmitFlash) {
+            return removeFlashPosts(parsedData);
+        }
+        return parsedData;
     }
 
     public JSONArray performTaggedPostIndexSearchQuery(String tags, int page) throws JSONException {
@@ -85,7 +115,11 @@ public class ApiDelegate {
         refinedTags = tags.replace(" ", "%20");
         finalUrl = baseUrl+postIndex+"?limit="+postsPerPage+"&tags="+refinedTags;
 
-        return new JSONArray(getRawJsonResponse(finalUrl));
+        JSONArray parsedData = new JSONArray(getRawJsonResponse(finalUrl));
+        if (doOmitFlash) {
+            return removeFlashPosts(parsedData);
+        }
+        return parsedData;
     }
 
 }
