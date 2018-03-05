@@ -160,7 +160,6 @@ public class MainActivity extends AppCompatActivity implements PostItemAdapter.P
                         //transaction.replace(R.id.pageView, fPoolsIndex);
                         break;
                     case R.id.nav_dev_json:
-                        //Todo: This is the next logical target for activity conversion. Fix this ASAP!
                         gotoDataModelViewer();
                         break;
                 }
@@ -293,6 +292,8 @@ public class MainActivity extends AppCompatActivity implements PostItemAdapter.P
         protected Boolean doInBackground(Void... voids) {
             ApiDelegate delegate = new ApiDelegate();
             JSONArray   response;
+
+
 
             try {
 
