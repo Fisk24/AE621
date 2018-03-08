@@ -1,29 +1,25 @@
 package com.example.fisk.ae621;
 
 import android.annotation.SuppressLint;
-import android.app.SearchManager;
 import android.content.Intent;
+import android.media.MediaPlayer;
+import android.net.Uri;
 import android.os.Bundle;
-import android.support.design.widget.FloatingActionButton;
-import android.support.design.widget.Snackbar;
-import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
 import android.util.TypedValue;
 import android.view.GestureDetector;
-import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
+import android.widget.VideoView;
 
 import com.bumptech.glide.Glide;
-
-import junit.framework.Test;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -36,6 +32,7 @@ public class PostViewActivity extends AppCompatActivity {
     JSONObject mPostData;
 
     ImageView    mMainImage;
+    VideoView    mMainVideo;
     TextView     mPostIdPrimary;
     TextView     mPostArtistPrimary;
     ImageButton  mDevViewDataModel;
@@ -74,6 +71,7 @@ public class PostViewActivity extends AppCompatActivity {
             // Initialize widgets
 
             mMainImage         = findViewById(R.id.pvMainImage);
+            mMainVideo         = findViewById(R.id.pvMainVideo);
             mPostIdPrimary     = findViewById(R.id.pvPostIdPrimary);
             mPostArtistPrimary = findViewById(R.id.pvPostArtistPrimary);
             mDevViewDataModel  = findViewById(R.id.pvDevViewDataModelButton);
@@ -93,12 +91,12 @@ public class PostViewActivity extends AppCompatActivity {
             isDescriptionOpen  = true;
 
             // Fill widgets
-            // Todo: Add a link to the data model viewer so that the data model can be viewed per post.
             // Todo: There should be at least 2 modes of scale: Fill Screen, and Actual Resolution
             // Todo: Don't forget about this character ▼ or this one ►
             try {
 
-                Glide.with(this).load(mPostData.getString("file_url")).into(mMainImage);
+                setMainView();
+
                 mPostIdPrimary.setText(buildIdString(mPostData.getString("id")));
                 mPostArtistPrimary.setText(buildArtistString(mPostData.getString("artist")));
 
@@ -110,7 +108,9 @@ public class PostViewActivity extends AppCompatActivity {
 
                 // Touch Gestures
                 // Double Tap
+
                 mMainImage.setOnTouchListener(new View.OnTouchListener() {
+                    @SuppressLint("ClickableViewAccessibility")
                     private GestureDetector gestureDetector = new GestureDetector(PostViewActivity.this, new GestureDetector.SimpleOnGestureListener() {
                         @Override
                         public boolean onDoubleTap(MotionEvent e) {
@@ -158,6 +158,43 @@ public class PostViewActivity extends AppCompatActivity {
         super.onSaveInstanceState(outState);
         outState.putBoolean("desc_open", isDescriptionOpen);
         setDescriptionOpen(isDescriptionOpen);
+    }
+
+    private void setMainView() {
+        try {
+            if (!mPostData.getString("file_ext").equals("webm")) {
+                mMainVideo.setVisibility(View.GONE);
+
+                Glide.with(this).load(mPostData.getString("file_url")).into(mMainImage);
+            }
+            else {
+                mMainImage.setVisibility(View.GONE);
+
+                // Layout Params are necessary get the video to display in the first place,
+                // as the height that the video is scaled to is based on the height of its container
+                int videoScaledHeight = (int) TypedValue.applyDimension(
+                        TypedValue.COMPLEX_UNIT_DIP,
+                        mPostData.getInt("height"),
+                        this.getResources().getDisplayMetrics());
+
+                LinearLayout.LayoutParams videoParams = new LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        videoScaledHeight);
+
+                mMainVideo.setLayoutParams(videoParams);
+                mMainVideo.setVideoURI(Uri.parse(mPostData.getString("file_url")));
+                mMainVideo.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+                    @Override
+                    public void onCompletion(MediaPlayer mediaPlayer) {
+                        mMainVideo.start();
+                    }
+                });
+                mMainVideo.start();
+            }
+
+        } catch (JSONException e) {
+            Log.e("JSONException", "PostViewFragment.setStatusBanner(): "+e.toString());
+        }
     }
 
     private void setStatusBanner() {

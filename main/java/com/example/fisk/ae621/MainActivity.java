@@ -30,10 +30,16 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.ArrayList;
+
 public class MainActivity extends AppCompatActivity implements PostItemAdapter.PostItemClickListener {
 
-    private String queryTags = "";
+    //private ArrayList<JSONArray> postItemsData = new ArrayList<>();
     private JSONArray postItemsData;
+
+    private String    queryTags = "";
+    private boolean   isLoading = false;
+    private int       currentPage = 1;
 
     private DrawerLayout   mDrawerLayout;
     private NavigationView mNavigationView;
@@ -43,12 +49,6 @@ public class MainActivity extends AppCompatActivity implements PostItemAdapter.P
 
     private SwipeRefreshLayout mSwipeLayout;
     private RecyclerView       mRecyclerView;
-
-    // Fragments
-
-    FragmentManager fragmentManger = getFragmentManager();
-
-    // The post viewer is created from scratch every time it's needed
 
     // #### Essential Activity Overrides ####
 
@@ -144,8 +144,6 @@ public class MainActivity extends AppCompatActivity implements PostItemAdapter.P
                 mDrawerLayout.closeDrawers();
 
                 // Add code here to update the UI based on the item selected
-                // For example, swap UI fragments here
-                FragmentTransaction transaction = fragmentManger.beginTransaction();
 
                 switch (item.getItemId()) {
                     case R.id.nav_login:
@@ -164,9 +162,6 @@ public class MainActivity extends AppCompatActivity implements PostItemAdapter.P
                         break;
                 }
 
-                transaction.addToBackStack(null);
-                transaction.commit();
-
                 return true;
             }
         });
@@ -177,9 +172,30 @@ public class MainActivity extends AppCompatActivity implements PostItemAdapter.P
         mRecyclerView = (RecyclerView      ) findViewById(R.id.recyclerView         );
         mSwipeLayout  = (SwipeRefreshLayout) findViewById(R.id.swipeRefreshLayout   );
 
-        mRecyclerView.setLayoutManager(new GridLayoutManager(this, getNumberOfColumns()));
+        GridLayoutManager layoutManager = new GridLayoutManager(this, getNumberOfColumns());
         VerticalSpaceItemDecoration verticalDecoration = new VerticalSpaceItemDecoration(100);
+
+        mRecyclerView.setLayoutManager(layoutManager);
+
         mRecyclerView.addItemDecoration(verticalDecoration);
+        mRecyclerView.setOnScrollListener(new PaginationScrollListener(layoutManager) {
+            @Override
+            protected void loadMoreItems() {
+                currentPage += 1; //Increment page index to load the next one
+                new FetchFeedTask().execute();
+                Log.e("SCROLL", "Tried to load more things");
+            }
+
+            @Override
+            public boolean isLastPage() {
+                return false;
+            }
+
+            @Override
+            public boolean isLoading() {
+                return isLoading;
+            }
+        });
         mSwipeLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
@@ -187,6 +203,13 @@ public class MainActivity extends AppCompatActivity implements PostItemAdapter.P
             }
         });
 
+    }
+
+    private void initRecyclerAdapter(JSONArray data) {
+        // Fill Recycler and make
+        PostItemAdapter adapter = new PostItemAdapter(this, data, mRecyclerView.getLayoutManager(), getNumberOfColumns());
+        adapter.setClickListener(this);
+        mRecyclerView.setAdapter(adapter);
     }
 
     // #### Search methods ####
@@ -208,6 +231,7 @@ public class MainActivity extends AppCompatActivity implements PostItemAdapter.P
     private void gotoDataModelViewer() {
         // Set the data for the selected post, and start the new activity
         Intent intent = new Intent(MainActivity.this, DevDataModelViewerActivity.class);
+
         intent.putExtra("data", postItemsData.toString());
         startActivity(intent);
     }
@@ -230,13 +254,6 @@ public class MainActivity extends AppCompatActivity implements PostItemAdapter.P
         } catch (JSONException e) {
             Log.e("postItemClicked()", e.toString());
         }
-    }
-
-    private void initRecyclerAdapter(JSONArray data) {
-        // Fill Recycler and make
-        PostItemAdapter adapter = new PostItemAdapter(this, data);
-        adapter.setClickListener(this);
-        mRecyclerView.setAdapter(adapter);
     }
 
     private int getNumberOfColumns() {
@@ -269,6 +286,21 @@ public class MainActivity extends AppCompatActivity implements PostItemAdapter.P
         this.postItemsData = postItemsData;
     }
 
+    public void appendPostItemsData(JSONArray newData) {
+        try {
+            if (postItemsData == null) {
+                postItemsData = new JSONArray();
+            }
+            for (int i = 0; i < newData.length(); i++) {
+                JSONObject jsonObject = newData.getJSONObject(i);
+                postItemsData.put(jsonObject);
+            }
+        }
+        catch (JSONException e) {
+            Log.e("JSONException", "FetchFeedTask: "+e.toString());
+        }
+    }
+
     // #### Fetch Feed Methods ####
     private void fetchPosts() {
         if (postItemsData == null) {
@@ -286,6 +318,7 @@ public class MainActivity extends AppCompatActivity implements PostItemAdapter.P
         @Override
         protected void onPreExecute() {
             mSwipeLayout.setRefreshing(true);
+            isLoading = true;
         }
 
         @Override
@@ -296,12 +329,12 @@ public class MainActivity extends AppCompatActivity implements PostItemAdapter.P
             try {
 
                 if (!queryTags.equals("")) {
-                    response = delegate.performTaggedPostIndexSearchQuery(queryTags, 1);
+                    response = delegate.performTaggedPostIndexSearchQuery(queryTags, currentPage);
                 } else {
-                    response = delegate.performBasicPostIndexQuery(1);
+                    response = delegate.performBasicPostIndexQuery(currentPage);
                 }
 
-                setPostItemsData(response);
+                appendPostItemsData(response);
 
                 return true;
             }
@@ -316,6 +349,7 @@ public class MainActivity extends AppCompatActivity implements PostItemAdapter.P
         protected void onPostExecute(Boolean success) {
 
             mSwipeLayout.setRefreshing(false);
+            isLoading = false;
 
             if (success) {
                 initRecyclerAdapter(getPostItemsData());

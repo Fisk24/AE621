@@ -125,6 +125,11 @@
                     android:layout_centerHorizontal="true"
                     app:srcCompat="@drawable/ic_launcher_background" />
 
+                <VideoView
+                    android:id="@+id/pvMainVideo"
+                    android:layout_width="match_parent"
+                    android:layout_height="20dp" />
+
                 <LinearLayout
                     android:id="@+id/pvDescriptionLayout"
                     android:layout_width="match_parent"
@@ -147,6 +152,7 @@
                         android:id="@+id/pvDescriptionBody"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:autoLink="web"
                         android:paddingLeft="10dp"
                         android:paddingTop="5dp"
                         android:text="This is a description of the above image. That sure is something isn't it?"
