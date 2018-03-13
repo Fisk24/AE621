@@ -2,6 +2,7 @@ package com.example.fisk.ae621;
 
 import android.app.Fragment;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
 import android.preference.PreferenceActivity;
@@ -13,6 +14,7 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
@@ -69,6 +71,8 @@ public class PostItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
 
     public interface PostItemClickListener {
         void postItemClicked(View view, int position);
+
+        void pageDevDataViewClicked(String data);
     }
 
     public void setClickListener(PostItemClickListener fragment) {
@@ -100,60 +104,79 @@ public class PostItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     // binds the data to the views in each cell
     @Override
     public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
+        // Todo: create little flags for the thumbnails that signify if it is an animated post or a webm, like e621 does
+        // Todo: Find a way to make the heart icon red, or at least white. Anything but black. (Is this color device dependent?, if so maybe replace with a drawable)
+        // Todo: Remove Flash based posts from the postView
+        if (holder instanceof HeaderViewHolder) {
+            onBindHeader(holder, position);
+
+        }else if (holder instanceof PostItemViewHolder) {
+            onBindPostData(holder, position);
+
+        }else if (holder instanceof FooterViewHolder) {
+            onBindFooter(holder, position);
+        }
+    }
+
+    private void onBindHeader(RecyclerView.ViewHolder holder, final int position) {
+
+        ((HeaderViewHolder) holder).viewPageDataButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                postItemClickListener.pageDevDataViewClicked(getPageStringAtIndex(position));
+
+            }
+        });
+
+    }
+
+    private void onBindFooter(RecyclerView.ViewHolder holder, int position) {
+        // Todo: The header could also house a myriad of developer functions And when we have dev-mode turned off, we just stop injecting header data so they wont be rendered
         try {
-            // Todo: create little flags for the thumbnails that signify if it is an animated post or a webm, like e621 does
-            // Todo: Find a way to make the heart icon red, or at least white. Anything but black. (Is this color device dependent?, if so maybe replace with a drawable)
-            // Todo: Remove Flash based posts from the postView
-            if (holder instanceof HeaderViewHolder) {
+            ((FooterViewHolder) holder).pageNumber.setText("Page "+mPostItems.getJSONObject(position).getInt("current_page"));
+        } catch (JSONException e) {
+            Log.e("FOOTER", "Failed to bind to footer: "+e.toString());
+        }
+    }
 
-                //set the Value from List to corresponding UI component as shown below.
-                //((HeaderViewHolder) holder).txtName.setText(mList.get(position))
+    private void onBindPostData(RecyclerView.ViewHolder holder, int position) {
+        try {
+            JSONObject post = mPostItems.getJSONObject(position);
 
-                //similarly bind other UI components or perform operations
+            ((PostItemViewHolder) holder).postFavorite.setText("♥" + post.getString("fav_count"));
 
-            }else if (holder instanceof PostItemViewHolder) {
-                JSONObject post = mPostItems.getJSONObject(position);
+            // set postScore attributes
+            ((PostItemViewHolder) holder).postScore.setTextColor(getScoreColor(post.getInt("score")));
+            ((PostItemViewHolder) holder).postScore.setText(getScoreText(post.getInt("score")));
 
-                ((PostItemViewHolder) holder).postFavorite.setText("♥" + post.getString("fav_count"));
+            // set postRating attributes
+            ((PostItemViewHolder) holder).postRating.setTextColor(getRatingColor(post.getString("rating")));
+            ((PostItemViewHolder) holder).postRating.setText(post.getString("rating").toUpperCase());
 
-                // set postScore attributes
-                ((PostItemViewHolder) holder).postScore.setTextColor(getScoreColor(post.getInt("score")));
-                ((PostItemViewHolder) holder).postScore.setText(getScoreText(post.getInt("score")));
+            // Set thumbnail attributes
+            // Scale values reported in the data to density-independent values
+            int reportedThumbnailHeight = post.getInt("preview_width");
+            int trueThumbnailHeight = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, reportedThumbnailHeight, parentContext.getResources().getDisplayMetrics());
 
-                // set postRating attributes
-                ((PostItemViewHolder) holder).postRating.setTextColor(getRatingColor(post.getString("rating")));
-                ((PostItemViewHolder) holder).postRating.setText(post.getString("rating").toUpperCase());
+            int reportedThumbnailWidth = post.getInt("preview_height");
+            int trueThumbnailWidth = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, reportedThumbnailWidth, parentContext.getResources().getDisplayMetrics());
 
-                // Set thumbnail attributes
-                // Scale values reported in the data to density-independent values
-                int reportedThumbnailHeight = post.getInt("preview_width");
-                int trueThumbnailHeight = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, reportedThumbnailHeight, parentContext.getResources().getDisplayMetrics());
+            LinearLayout.LayoutParams thumbnailParams = new LinearLayout.LayoutParams(trueThumbnailHeight, trueThumbnailWidth);
+            thumbnailParams.gravity = Gravity.CENTER_HORIZONTAL;
 
-                int reportedThumbnailWidth = post.getInt("preview_height");
-                int trueThumbnailWidth = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, reportedThumbnailWidth, parentContext.getResources().getDisplayMetrics());
+            ((PostItemViewHolder) holder).postThumbnail.setLayoutParams(thumbnailParams);
 
-                LinearLayout.LayoutParams thumbnailParams = new LinearLayout.LayoutParams(trueThumbnailHeight, trueThumbnailWidth);
-                thumbnailParams.gravity = Gravity.CENTER_HORIZONTAL;
+            // set border
+            ((PostItemViewHolder) holder).postThumbnail.setBackground(getThumbnailBorder(post));
 
-                ((PostItemViewHolder) holder).postThumbnail.setLayoutParams(thumbnailParams);
-
-                // set border
-                ((PostItemViewHolder) holder).postThumbnail.setBackground(getThumbnailBorder(post));
-
-                // Set as online image
-                if (post.getString("file_ext").equals("swf")) {
-                    Glide.with(parentContext).load(post.getString("preview_url")).into(((PostItemViewHolder) holder).postThumbnail);
-                }
-                else {
-                    // Todo: Make this use sample or full based on user preference
-                    Glide.with(parentContext).load(post.getString("preview_url")).into(((PostItemViewHolder) holder).postThumbnail);
-                }
-
-                // Your code here
-
-            }else if (holder instanceof FooterViewHolder) {
-
-                //your code here
+            // Set as online image
+            if (post.getString("file_ext").equals("swf")) {
+                Glide.with(parentContext).load(post.getString("preview_url")).into(((PostItemViewHolder) holder).postThumbnail);
+            }
+            else {
+                // Todo: Make this use sample or preview based on user preference
+                Glide.with(parentContext).load(post.getString("preview_url")).into(((PostItemViewHolder) holder).postThumbnail);
             }
 
         }
@@ -164,15 +187,30 @@ public class PostItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
 
     // #### Items View Holders ####
 
+    public class HeaderAccessory extends JSONObject {
+        public HeaderAccessory() {
+           // Just an idea for now, maybe it should have a factory and its own file to create accessory data
+        }
+    }
+
     public class HeaderViewHolder extends RecyclerView.ViewHolder {
+
+        Button viewPageDataButton;
+
         public HeaderViewHolder(View headerView) {
             super(headerView);
+            viewPageDataButton = headerView.findViewById(R.id.piViewPageData);
         }
     }
 
     public class FooterViewHolder extends RecyclerView.ViewHolder {
-        public FooterViewHolder(View headerView) {
-            super(headerView);
+
+        TextView pageNumber;
+
+        public FooterViewHolder(View footerView) {
+            super(footerView);
+
+            pageNumber = footerView.findViewById(R.id.footerPageNumber);
         }
     }
 
@@ -205,6 +243,22 @@ public class PostItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     }
 
     // #### Data management ####
+    public void setPostItems(JSONArray newData) {
+        mPostItems = newData;
+    }
+
+    private String getPageStringAtIndex(int position) {
+        JSONArray pageData = new JSONArray();
+        try {
+            for (int index = position+1; !mPostItems.getJSONObject(index).has("accessory_type"); index++) {
+                pageData.put(mPostItems.getJSONObject(index));
+            }
+        } catch (JSONException e) {
+            Log.e("Page String Builder", "JSONException: "+e.toString());
+        }
+
+        return pageData.toString();
+    }
 
     // #### Post thumbnail detailing ####
     private int getScoreColor(int score) {
@@ -294,8 +348,8 @@ public class PostItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     public int getItemViewType(int position) {
         if (isPositionHeader(position)) {
             return TYPE_HEADER;
-
-        } else if (isPositionFooter(position)) {
+        }
+        else if (isPositionFooter(position)) {
             return TYPE_FOOTER;
         }
 
@@ -304,11 +358,27 @@ public class PostItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
 
     // Determine the beginning of a page
     private boolean isPositionHeader(int position) {
-        return position == 0;
+        try {
+            if (mPostItems.getJSONObject(position).has("accessory_type")) {
+                return mPostItems.getJSONObject(position).getInt("accessory_type") == TYPE_HEADER;
+            }
+        } catch (JSONException e) {
+            Log.e("Header", "PostItemAdapter.isPositionHeader(): " + e.toString());
+        }
+
+        return false;
     }
 
     // Determine the end of a page
     private boolean isPositionFooter(int position) {
-        return position > mPostItems.length();
+        try {
+            if (mPostItems.getJSONObject(position).has("accessory_type")) {
+                return mPostItems.getJSONObject(position).getInt("accessory_type") == TYPE_FOOTER;
+            }
+        } catch (JSONException e) {
+            Log.e("Footer", "PostItemAdapter.isPositionFooter(): " + e.toString());
+        }
+
+        return false;
     }
 }

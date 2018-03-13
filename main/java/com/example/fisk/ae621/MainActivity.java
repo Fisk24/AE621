@@ -6,6 +6,7 @@ import android.app.FragmentTransaction;
 import android.app.SearchManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -41,6 +42,8 @@ public class MainActivity extends AppCompatActivity implements PostItemAdapter.P
     private boolean   isLoading = false;
     private int       currentPage = 1;
 
+    private SharedPreferences sharedPref;
+
     private DrawerLayout   mDrawerLayout;
     private NavigationView mNavigationView;
 
@@ -57,12 +60,20 @@ public class MainActivity extends AppCompatActivity implements PostItemAdapter.P
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        //initializeSharedPreferences();
+        sharedPref = getPreferences(Context.MODE_PRIVATE);
+
+        if (savedInstanceState != null) {
+            currentPage = savedInstanceState.getInt("current_page");
+            restorePostData();
+        }
+
         initializeActionBar();
         initializeNavigationView();
 
         initializeSearchParameters();
 
-        initializeRecyclerView();
+        initializeRecyclerView(savedInstanceState);
 
         fetchPosts();
 
@@ -72,8 +83,14 @@ public class MainActivity extends AppCompatActivity implements PostItemAdapter.P
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
         if (postItemsData!=null) {
-            outState.putString("postData", postItemsData.toString());
-            outState.putParcelable("post_adapter_state", mRecyclerView.getLayoutManager().onSaveInstanceState());
+            // TODO: The postItemsData is simply too large to be saved via this method, consider investigating shared preferences
+            // TODO: A Possible alternative would be the application class, however I have been warned that this may cause serious memory issues
+            outState.putParcelable("post_layout_manager_state", mRecyclerView.getLayoutManager().onSaveInstanceState());
+            outState.putInt("current_page", currentPage);
+
+            SharedPreferences.Editor editor = sharedPref.edit();
+            editor.putString("post_data", postItemsData.toString());
+            editor.apply();
         }
     }
 
@@ -82,13 +99,7 @@ public class MainActivity extends AppCompatActivity implements PostItemAdapter.P
         // This runs after onCreate, and after the adapter is initialized consequently
         if (savedInstanceState != null) {
             // Restore last state for checked position.
-            try {
-                postItemsData = new JSONArray(savedInstanceState.getString("postData", ""));
-                mRecyclerView.getLayoutManager().onRestoreInstanceState(savedInstanceState.getParcelable("post_adapter_state"));
-            }
-            catch (JSONException e) {
-                Log.e("JSONException", "MainActivity.onCreate():"+e.toString());
-            }
+            mRecyclerView.getLayoutManager().onRestoreInstanceState(savedInstanceState.getParcelable("post_layout_manager_state"));
         }
     }
 
@@ -120,6 +131,18 @@ public class MainActivity extends AppCompatActivity implements PostItemAdapter.P
     }
 
     // #### Widget Initialization ####
+
+    private void restorePostData() {
+        try {
+            String postDataString = sharedPref.getString("post_data", null);
+            Log.e("POSTDATA", "Post items data is being restored.");
+            if (postDataString != null) {
+                postItemsData = new JSONArray(postDataString);
+            }
+        } catch (JSONException e) {
+            Log.e("ActivitySharedPrefs", "post_data: "+e.toString());
+        }
+    }
 
     private void initializeActionBar() {
         // ActionBar
@@ -157,9 +180,6 @@ public class MainActivity extends AppCompatActivity implements PostItemAdapter.P
                     case R.id.nav_pools:
                         //transaction.replace(R.id.pageView, fPoolsIndex);
                         break;
-                    case R.id.nav_dev_json:
-                        gotoDataModelViewer();
-                        break;
                 }
 
                 return true;
@@ -167,17 +187,17 @@ public class MainActivity extends AppCompatActivity implements PostItemAdapter.P
         });
     }
 
-    private void initializeRecyclerView() {
+    private void initializeRecyclerView(Bundle savedInstanceState) {
 
         mRecyclerView = (RecyclerView      ) findViewById(R.id.recyclerView         );
         mSwipeLayout  = (SwipeRefreshLayout) findViewById(R.id.swipeRefreshLayout   );
 
         GridLayoutManager layoutManager = new GridLayoutManager(this, getNumberOfColumns());
-        VerticalSpaceItemDecoration verticalDecoration = new VerticalSpaceItemDecoration(100);
-
         mRecyclerView.setLayoutManager(layoutManager);
 
+        VerticalSpaceItemDecoration verticalDecoration = new VerticalSpaceItemDecoration(100);
         mRecyclerView.addItemDecoration(verticalDecoration);
+
         mRecyclerView.setOnScrollListener(new PaginationScrollListener(layoutManager) {
             @Override
             protected void loadMoreItems() {
@@ -207,9 +227,16 @@ public class MainActivity extends AppCompatActivity implements PostItemAdapter.P
 
     private void initRecyclerAdapter(JSONArray data) {
         // Fill Recycler and make
-        PostItemAdapter adapter = new PostItemAdapter(this, data, mRecyclerView.getLayoutManager(), getNumberOfColumns());
-        adapter.setClickListener(this);
-        mRecyclerView.setAdapter(adapter);
+        if (mRecyclerView.getAdapter() == null) {
+            PostItemAdapter adapter = new PostItemAdapter(this, data, mRecyclerView.getLayoutManager(), getNumberOfColumns());
+            adapter.setClickListener(this);
+            mRecyclerView.setAdapter(adapter);
+        }
+        else {
+            PostItemAdapter adapter = (PostItemAdapter) mRecyclerView.getAdapter();
+            adapter.setPostItems(data);
+            adapter.notifyItemRangeChanged(0, adapter.getItemCount());
+        }
     }
 
     // #### Search methods ####
@@ -228,11 +255,11 @@ public class MainActivity extends AppCompatActivity implements PostItemAdapter.P
 
     // #### Navigation Methods ####
 
-    private void gotoDataModelViewer() {
+    private void gotoDataModelViewer(String data) {
         // Set the data for the selected post, and start the new activity
         Intent intent = new Intent(MainActivity.this, DevDataModelViewerActivity.class);
 
-        intent.putExtra("data", postItemsData.toString());
+        intent.putExtra("data", data);
         startActivity(intent);
     }
 
@@ -244,6 +271,7 @@ public class MainActivity extends AppCompatActivity implements PostItemAdapter.P
 
     // #### Recycler and Adapter methods ####
 
+
     @Override
     public void postItemClicked(View view, int position) {
         try {
@@ -254,6 +282,11 @@ public class MainActivity extends AppCompatActivity implements PostItemAdapter.P
         } catch (JSONException e) {
             Log.e("postItemClicked()", e.toString());
         }
+    }
+
+    @Override
+    public void pageDevDataViewClicked(String data) {
+        gotoDataModelViewer(data);
     }
 
     private int getNumberOfColumns() {
@@ -282,22 +315,21 @@ public class MainActivity extends AppCompatActivity implements PostItemAdapter.P
         return postItemsData;
     }
 
-    public void setPostItemsData(JSONArray postItemsData) {
-        this.postItemsData = postItemsData;
-    }
-
     public void appendPostItemsData(JSONArray newData) {
         try {
             if (postItemsData == null) {
                 postItemsData = new JSONArray();
             }
+            // Insert Header Data Accessory
+            postItemsData.put(new JSONObject("{accessory_type: "+PostItemAdapter.TYPE_HEADER+", current_page: "+(currentPage+1)+"}"));
             for (int i = 0; i < newData.length(); i++) {
                 JSONObject jsonObject = newData.getJSONObject(i);
                 postItemsData.put(jsonObject);
             }
+            postItemsData.put(new JSONObject("{accessory_type: "+PostItemAdapter.TYPE_FOOTER+", current_page: "+(currentPage+1)+"}")); // Insert Footer Token
         }
         catch (JSONException e) {
-            Log.e("JSONException", "FetchFeedTask: "+e.toString());
+            Log.e("JSONException", "appendPostData(): "+e.toString());
         }
     }
 
