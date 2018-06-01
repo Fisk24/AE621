@@ -70,7 +70,7 @@ public class PostItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
     private PostItemClickListener postItemClickListener;
 
     public interface PostItemClickListener {
-        void postItemClicked(View view, int position);
+        void postItemClicked(View view, JSONObject postData);
 
         void pageDevDataViewClicked(String data);
     }
@@ -237,7 +237,11 @@ public class PostItemAdapter extends RecyclerView.Adapter<RecyclerView.ViewHolde
         @Override
         public void onClick(View view) {
             if (postItemClickListener != null) {
-                postItemClickListener.postItemClicked(view, getAdapterPosition());
+                try {
+                    postItemClickListener.postItemClicked(view, mPostItems.getJSONObject(getAdapterPosition()));
+                } catch (JSONException e) {
+                    Log.e("POSTCLICK", e.toString());
+                }
             }
         }
     }

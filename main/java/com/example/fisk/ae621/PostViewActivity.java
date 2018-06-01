@@ -33,8 +33,7 @@ public class PostViewActivity extends AppCompatActivity {
 
     ImageView    mMainImage;
     VideoView    mMainVideo;
-    TextView     mPostIdPrimary;
-    TextView     mPostArtistPrimary;
+
     ImageButton  mDevViewDataModel;
 
     LinearLayout mStatusLayout;
@@ -57,7 +56,7 @@ public class PostViewActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.post_view_layout);
 
-        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        Toolbar toolbar = (Toolbar) findViewById(R.id.poolViewToolbar);
         setSupportActionBar(toolbar);
 
         try {
@@ -72,8 +71,7 @@ public class PostViewActivity extends AppCompatActivity {
 
             mMainImage         = findViewById(R.id.pvMainImage);
             mMainVideo         = findViewById(R.id.pvMainVideo);
-            mPostIdPrimary     = findViewById(R.id.pvPostIdPrimary);
-            mPostArtistPrimary = findViewById(R.id.pvPostArtistPrimary);
+
             mDevViewDataModel  = findViewById(R.id.pvDevViewDataModelButton);
 
             mStatusLayout      = findViewById(R.id.pvStatusLayout);
@@ -93,53 +91,45 @@ public class PostViewActivity extends AppCompatActivity {
             // Fill widgets
             // Todo: There should be at least 2 modes of scale: Fill Screen, and Actual Resolution
             // Todo: Don't forget about this character ▼ or this one ►
-            try {
 
-                setMainView();
+            setMainView();
 
-                mPostIdPrimary.setText(buildIdString(mPostData.getString("id")));
-                mPostArtistPrimary.setText(buildArtistString(mPostData.getString("artist")));
+            setStatusBanner();
 
-                setStatusBanner();
+            setChildPostWidgets();
 
-                setChildPostWidgets();
+            setDescriptionWidgets();
 
-                setDescriptionWidgets();
+            // Touch Gestures
+            // Double Tap
 
-                // Touch Gestures
-                // Double Tap
-
-                mMainImage.setOnTouchListener(new View.OnTouchListener() {
-                    @SuppressLint("ClickableViewAccessibility")
-                    private GestureDetector gestureDetector = new GestureDetector(PostViewActivity.this, new GestureDetector.SimpleOnGestureListener() {
-                        @Override
-                        public boolean onDoubleTap(MotionEvent e) {
-                            Log.d("TEST", "onDoubleTap");
-                            setScaleTypeFill();
-                            return super.onDoubleTap(e);
-                        }
-
-                    });
-                    @SuppressLint("ClickableViewAccessibility")
+            mMainImage.setOnTouchListener(new View.OnTouchListener() {
+                @SuppressLint("ClickableViewAccessibility")
+                private GestureDetector gestureDetector = new GestureDetector(PostViewActivity.this, new GestureDetector.SimpleOnGestureListener() {
                     @Override
-                    public boolean onTouch(View v, MotionEvent event) {
-                        Log.d("TEST", "Raw event: " + event.getAction() + ", (" + event.getRawX() + ", " + event.getRawY() + ")");
-                        gestureDetector.onTouchEvent(event);
-                        return true;
+                    public boolean onDoubleTap(MotionEvent e) {
+                        Log.d("TEST", "onDoubleTap");
+                        setScaleTypeFill();
+                        return super.onDoubleTap(e);
                     }
-                });
 
-                // Goto Data Model
-                mDevViewDataModel.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        gotoDataModelViewer();
-                    }
                 });
+                @SuppressLint("ClickableViewAccessibility")
+                @Override
+                public boolean onTouch(View v, MotionEvent event) {
+                    Log.d("TEST", "Raw event: " + event.getAction() + ", (" + event.getRawX() + ", " + event.getRawY() + ")");
+                    gestureDetector.onTouchEvent(event);
+                    return true;
+                }
+            });
 
-            } catch (JSONException e) {
-                Log.e("JSONException", "PostViewFragment.onCreate(): "+e.toString());
-            }
+            // Goto Data Model
+            mDevViewDataModel.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    gotoDataModelViewer();
+                }
+            });
 
         }
         else {

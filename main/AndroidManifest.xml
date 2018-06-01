@@ -3,6 +3,7 @@
     package="com.example.fisk.ae621">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <application
         android:allowBackup="true"
@@ -30,7 +31,15 @@
             android:label="@string/title_activity_post_view"
             android:theme="@style/NoActionBarBlue" />
         <activity android:name=".DevDataModelViewerActivity" />
-        <activity android:name=".CommentIndexActivity"></activity>
+        <activity android:name=".CommentIndexActivity" />
+        <activity
+            android:name=".PoolActivity"
+            android:label="@string/title_activity_pool"
+            android:theme="@style/NoActionBarBlue" />
+        <activity
+            android:name=".PostActivity"
+            android:label="@string/title_activity_post_index"
+            android:theme="@style/NoActionBarBlue"></activity>
     </application>
 
 </manifest>

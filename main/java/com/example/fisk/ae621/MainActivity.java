@@ -1,16 +1,17 @@
 package com.example.fisk.ae621;
 
-import android.app.Fragment;
-import android.app.FragmentManager;
-import android.app.FragmentTransaction;
 import android.app.SearchManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.design.widget.NavigationView;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.widget.DrawerLayout;
 import android.support.v4.widget.SwipeRefreshLayout;
@@ -25,18 +26,105 @@ import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.ArrayList;
+import java.io.IOException;
+import java.net.InetAddress;
 
-public class MainActivity extends AppCompatActivity implements PostItemAdapter.PostItemClickListener {
+public class MainActivity extends AppCompatActivity implements ApiDelegate.ApiCallback {
 
-    //private ArrayList<JSONArray> postItemsData = new ArrayList<>();
-    private JSONArray postItemsData;
+    private ApiDelegate apiDelegate;
+
+    private TextView mLdMainStatus;
+
+    // #### Essential Activity Overrides ####
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        mLdMainStatus = findViewById(R.id.ld_main_status);
+
+        /*
+        //initializeSharedPreferences();
+        sharedPref = getPreferences(Context.MODE_PRIVATE);
+
+        if (savedInstanceState != null) {
+            currentPage = savedInstanceState.getInt("current_page");
+            //restorePostData();
+        }
+        */
+
+        // DONT recreate the fragment if it already exists (useful for configuration changes)
+
+        FragmentManager fm = getSupportFragmentManager();
+        apiDelegate = (ApiDelegate) fm.findFragmentByTag(ApiDelegate.TAG);
+
+        if (apiDelegate == null) {
+            apiDelegate = ApiDelegate.getInstance(fm);
+            apiDelegate.setApiCallback(this);
+            apiDelegate.performQueryById(ApiDelegate.POLL_REQUEST);
+
+            mLdMainStatus.setText("Trying to reach e621.net");
+        }
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        /*
+        if (postItemsData!=null) {
+            //outState.putParcelable("post_layout_manager_state", mRecyclerView.getLayoutManager().onSaveInstanceState());
+            outState.putInt("current_page", currentPage);
+
+            SharedPreferences.Editor editor = sharedPref.edit();
+            editor.putString("post_data", postItemsData.toString());
+            editor.commit();
+        }
+        */
+    }
+
+    @Override
+    public void onRestoreInstanceState(Bundle savedInstanceState) {
+
+    }
+
+    @Override
+    public NetworkInfo getActiveNetworkInfo() {
+        // Generic internet connectivity test
+        ConnectivityManager connMan = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo netInfo = connMan.getActiveNetworkInfo();
+        return netInfo;
+    }
+
+    public void gotoPostActivity() {
+        Intent intent = new Intent(this, PostActivity.class);
+        startActivity(intent);
+    }
+
+    @Override
+    public void onApiResponse(ApiDelegate.ApiResponse apiResponse) {
+        Log.e("DEBUG", "onApiResponse: "+apiResponse.wasSuccess());
+        if (apiResponse.wasSuccess()) {
+            //mLdMainStatus.setText("Success!");
+            gotoPostActivity();
+        } else {
+            //Log.e("DEBUG", "No really it was!");
+            mLdMainStatus.setText("Check connection...");
+        }
+    }
+
+    /*
+
+     //private ArrayList<JSONArray> postItemsData = new ArrayList<>();
+    private JSONArray  postItemsData;
+    private JSONObject dynamoItemsData;
 
     private String    queryTags = "";
     private boolean   isLoading = false;
@@ -50,103 +138,32 @@ public class MainActivity extends AppCompatActivity implements PostItemAdapter.P
     private android.support.v7.widget.Toolbar toolBar;
     private ActionBar actionBar;
 
-    private SwipeRefreshLayout mSwipeLayout;
-    private RecyclerView       mRecyclerView;
+        // #### Widget Initialization ####
 
-    // #### Essential Activity Overrides ####
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
-        //initializeSharedPreferences();
-        sharedPref = getPreferences(Context.MODE_PRIVATE);
-
-        if (savedInstanceState != null) {
-            currentPage = savedInstanceState.getInt("current_page");
-            restorePostData();
-        }
-
-        initializeActionBar();
-        initializeNavigationView();
-
-        initializeSearchParameters();
-
-        initializeRecyclerView(savedInstanceState);
-
-        fetchPosts();
-
-    }
-
-    @Override
-    public void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        if (postItemsData!=null) {
-            // TODO: The postItemsData is simply too large to be saved via this method, consider investigating shared preferences
-            // TODO: A Possible alternative would be the application class, however I have been warned that this may cause serious memory issues
-            outState.putParcelable("post_layout_manager_state", mRecyclerView.getLayoutManager().onSaveInstanceState());
-            outState.putInt("current_page", currentPage);
-
-            SharedPreferences.Editor editor = sharedPref.edit();
-            editor.putString("post_data", postItemsData.toString());
-            editor.apply();
-        }
-    }
-
-    @Override
-    public void onRestoreInstanceState(Bundle savedInstanceState) {
-        // This runs after onCreate, and after the adapter is initialized consequently
-        if (savedInstanceState != null) {
-            // Restore last state for checked position.
-            mRecyclerView.getLayoutManager().onRestoreInstanceState(savedInstanceState.getParcelable("post_layout_manager_state"));
-        }
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the options menu from XML
-        MenuInflater inflater = getMenuInflater();
-        inflater.inflate(R.menu.action_search, menu);
-
-        // Get the SearchView and set the searchable configuration
-        SearchManager searchManager = (SearchManager) getSystemService(Context.SEARCH_SERVICE);
-        SearchView searchView = (SearchView) menu.findItem(R.id.menu_search).getActionView();
-
-        // Assumes current activity is the searchable activity
-        searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
-        searchView.setIconifiedByDefault(true); // Do not iconify the widget; expand it by default
-
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case android.R.id.home:
-                mDrawerLayout.openDrawer(GravityCompat.START);
-                return true;
-        }
-        return super.onOptionsItemSelected(item);
-    }
-
-    // #### Widget Initialization ####
-
-    private void restorePostData() {
+    private void initializeDynamoData() {
         try {
-            String postDataString = sharedPref.getString("post_data", null);
-            Log.e("POSTDATA", "Post items data is being restored.");
-            if (postDataString != null) {
-                postItemsData = new JSONArray(postDataString);
-            }
+            dynamoItemsData = new JSONObject("" +
+                    "{" +
+                    "\"created_at\":{\"json_class\":\"Time\",\"s\":1520658590,\"n\":714099000}," +
+                    "\"description\":\"You should not be seeing this...\"," +
+                    "\"id\":00000," +
+                    "\"is_active\":true," +
+                    "\"is_locked\":false," +
+                    "\"name\":\"Dynamic_Pool\"," +
+                    "\"post_count\":0," +
+                    "\"updated_at\":{\"json_class\":\"Time\",\"s\":1520993880,\"n\":93137000}," +
+                    "\"user_id\":00000," +
+                    "\"posts\":[]"+
+                    "}"
+            );
         } catch (JSONException e) {
-            Log.e("ActivitySharedPrefs", "post_data: "+e.toString());
+            Log.e("DYNAMO", "Failed to initialize: "+e.toString());
         }
     }
 
     private void initializeActionBar() {
         // ActionBar
-        toolBar = (android.support.v7.widget.Toolbar) findViewById(R.id.toolbar);
+        toolBar = (android.support.v7.widget.Toolbar) findViewById(R.id.poolViewToolbar);
         setSupportActionBar(toolBar);
         actionBar = getSupportActionBar();
         actionBar.setDisplayHomeAsUpEnabled(true);
@@ -173,6 +190,10 @@ public class MainActivity extends AppCompatActivity implements PostItemAdapter.P
                         //transaction.replace(R.id.pageView, fLogin);
                         break;
                     case R.id.nav_posts:
+                        gotoPosts();
+                        break;
+                    case R.id.nav_dynamo:
+                        gotoDynamicPool();
                         break;
                     case R.id.nav_comments:
                         gotoCommentIndex();
@@ -187,72 +208,6 @@ public class MainActivity extends AppCompatActivity implements PostItemAdapter.P
         });
     }
 
-    private void initializeRecyclerView(Bundle savedInstanceState) {
-
-        mRecyclerView = (RecyclerView      ) findViewById(R.id.recyclerView         );
-        mSwipeLayout  = (SwipeRefreshLayout) findViewById(R.id.swipeRefreshLayout   );
-
-        GridLayoutManager layoutManager = new GridLayoutManager(this, getNumberOfColumns());
-        mRecyclerView.setLayoutManager(layoutManager);
-
-        VerticalSpaceItemDecoration verticalDecoration = new VerticalSpaceItemDecoration(100);
-        mRecyclerView.addItemDecoration(verticalDecoration);
-
-        mRecyclerView.setOnScrollListener(new PaginationScrollListener(layoutManager) {
-            @Override
-            protected void loadMoreItems() {
-                currentPage += 1; //Increment page index to load the next one
-                new FetchFeedTask().execute();
-                Log.e("SCROLL", "Tried to load more things");
-            }
-
-            @Override
-            public boolean isLastPage() {
-                return false;
-            }
-
-            @Override
-            public boolean isLoading() {
-                return isLoading;
-            }
-        });
-        mSwipeLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-            @Override
-            public void onRefresh() {
-                new FetchFeedTask().execute();
-            }
-        });
-
-    }
-
-    private void initRecyclerAdapter(JSONArray data) {
-        // Fill Recycler and make
-        if (mRecyclerView.getAdapter() == null) {
-            PostItemAdapter adapter = new PostItemAdapter(this, data, mRecyclerView.getLayoutManager(), getNumberOfColumns());
-            adapter.setClickListener(this);
-            mRecyclerView.setAdapter(adapter);
-        }
-        else {
-            PostItemAdapter adapter = (PostItemAdapter) mRecyclerView.getAdapter();
-            adapter.setPostItems(data);
-            adapter.notifyItemRangeChanged(0, adapter.getItemCount());
-        }
-    }
-
-    // #### Search methods ####
-
-    private void initializeSearchParameters() {
-        Intent intent = getIntent();
-        if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
-            String query = intent.getStringExtra(SearchManager.QUERY);
-            doSearchQuery(query);
-        }
-    }
-
-    private void doSearchQuery(String query) {
-        queryTags = query;
-    }
-
     // #### Navigation Methods ####
 
     private void gotoDataModelViewer(String data) {
@@ -263,43 +218,22 @@ public class MainActivity extends AppCompatActivity implements PostItemAdapter.P
         startActivity(intent);
     }
 
+    private void gotoPosts() {
+        Intent intent = new Intent(MainActivity.this, PostActivity.class);
+        //intent.putExtra("pool_data", dynamoItemsData.toString());
+        startActivity(intent);
+    }
+
+    private void gotoDynamicPool() {
+        Intent intent = new Intent(MainActivity.this, PoolActivity.class);
+        intent.putExtra("pool_data", dynamoItemsData.toString());
+        startActivity(intent);
+    }
+
     private void gotoCommentIndex() {
         Intent intent = new Intent(MainActivity.this, CommentIndexActivity.class);
         //intent.putExtra("data", postItemsData.toString());
         startActivity(intent);
-    }
-
-    // #### Recycler and Adapter methods ####
-
-
-    @Override
-    public void postItemClicked(View view, int position) {
-        try {
-            // Pass the data for the selected post to the navigation method
-            JSONObject postItem   = getPostItemsData().getJSONObject(position);
-            gotoPostView(postItem);
-
-        } catch (JSONException e) {
-            Log.e("postItemClicked()", e.toString());
-        }
-    }
-
-    @Override
-    public void pageDevDataViewClicked(String data) {
-        gotoDataModelViewer(data);
-    }
-
-    private int getNumberOfColumns() {
-
-        // Determine the number of columns that can fit on the screen, given the actual width of the screen.
-
-        DisplayMetrics displayMetrics = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
-
-        int width  = (int) (displayMetrics.widthPixels / displayMetrics.density); // Display width, in density independent pixels.
-        int maxThumbnailWidth = 175;
-
-        return width / maxThumbnailWidth;
     }
 
     public void gotoPostView(JSONObject post) {
@@ -308,42 +242,9 @@ public class MainActivity extends AppCompatActivity implements PostItemAdapter.P
         intent.putExtra("post_data", post.toString());
         startActivity(intent);
     }
+     */
 
-    // #### Post data Manipulators ####
-
-    public JSONArray getPostItemsData() {
-        return postItemsData;
-    }
-
-    public void appendPostItemsData(JSONArray newData) {
-        try {
-            if (postItemsData == null) {
-                postItemsData = new JSONArray();
-            }
-            // Insert Header Data Accessory
-            postItemsData.put(new JSONObject("{accessory_type: "+PostItemAdapter.TYPE_HEADER+", current_page: "+(currentPage+1)+"}"));
-            for (int i = 0; i < newData.length(); i++) {
-                JSONObject jsonObject = newData.getJSONObject(i);
-                postItemsData.put(jsonObject);
-            }
-            postItemsData.put(new JSONObject("{accessory_type: "+PostItemAdapter.TYPE_FOOTER+", current_page: "+(currentPage+1)+"}")); // Insert Footer Token
-        }
-        catch (JSONException e) {
-            Log.e("JSONException", "appendPostData(): "+e.toString());
-        }
-    }
-
-    // #### Fetch Feed Methods ####
-    private void fetchPosts() {
-        if (postItemsData == null) {
-            Log.e("Oops", "post data was null");
-            new FetchFeedTask().execute();
-        }
-        else {
-            initRecyclerAdapter(postItemsData);
-        }
-    }
-
+    /*
     // Performs api delegations in background
     private class FetchFeedTask extends AsyncTask<Void, Void, Boolean> {
 
@@ -391,4 +292,5 @@ public class MainActivity extends AppCompatActivity implements PostItemAdapter.P
             }
         }
     }
+    */
 }

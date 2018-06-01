@@ -15,16 +15,20 @@
             android:icon="@drawable/ic_image_white_24px"
             android:title="@string/posts" />
         <item
-            android:id="@+id/nav_comments"
-            android:icon="@drawable/ic_comment_white"
-            android:title="@string/comments" />
+            android:id="@+id/nav_dynamo"
+            android:icon="@drawable/ic_collections_white"
+            android:title="@string/queue" />
         <item
             android:id="@+id/nav_pools"
             android:icon="@drawable/ic_collections_white"
             android:title="@string/pools" />
         <item
+            android:id="@+id/nav_comments"
+            android:icon="@drawable/ic_comment_white"
+            android:title="@string/comments" />
+        <item
             android:id="@+id/nav_settings"
             android:icon="@drawable/ic_collections_white"
-            android:title="@string/pools" />
+            android:title="@string/settings" />
     </group>
 </menu>

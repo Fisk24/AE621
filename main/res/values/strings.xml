@@ -3,14 +3,25 @@
     <string name="login">Login</string>
     <string name="my_account">My Account</string>
     <string name="posts">Posts</string>
+    <string name="queue">Dynamic Pool</string>
     <string name="comments">Comments</string>
     <string name="pools">Pools</string>
-    <string name="Settings">Settings</string>
+    <string name="settings">Settings</string>
     <string name="title_activity_post_view">Viewing Post: %1%s</string>
     <string name="title_activity_data_model_viewer">Data Model Explorer</string>
+
+    <string name="content_missing_main">There doesn\'t seem to be anything here!</string>
+    <string name="content_missing_back">Go Back</string>
 
     <string name="navigation_drawer_open">Open navigation drawer</string>
     <string name="navigation_drawer_close">Close navigation drawer</string>
 
     <string name="action_settings">Settings</string>
+    <string name="title_activity_pool">Pool View</string>
+    <string name="section_format">Hello World from section: %1$d</string>
+    <string name="title_activity_post_index">Posts</string>
+    <string name="tab_text_1">Tab 1</string>
+    <string name="tab_text_2">Tab 2</string>
+    <string name="tab_text_3">Tab 3</string>
+
 </resources>
