@@ -104,6 +104,11 @@ public class PostActivity extends AppCompatActivity implements PostItemAdapter.P
     }
 
     @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+    }
+
+    @Override
     public void onBackPressed() {
         int pagerCurrent = mViewPager.getCurrentItem();
         if (pagerCurrent != 0) {

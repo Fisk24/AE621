@@ -81,13 +81,18 @@ public class PostIndexFragment extends Fragment {
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
+
         if (savedInstanceState != null) {
             currentPage = savedInstanceState.getInt("current_page");
         }
         initializeRecyclerView(savedInstanceState);
         restorePostData();
 
-        if (postItemsData == null) {
+        // TODO: Possible setting: Toggle on and off this persistence behavior
+        // Currently the postItemsData from the last time the app was closed continues to persist
+        // Possible feature?
+        // Easier fix, proc a refresh operation if savedInstanceState == null
+        if (postItemsData == null || savedInstanceState == null) {
             refreshPostData();
         }
         else {
