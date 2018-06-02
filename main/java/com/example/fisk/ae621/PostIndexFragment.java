@@ -57,6 +57,12 @@ public class PostIndexFragment extends Fragment {
     }
 
     @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        sharedPref = getActivity().getPreferences(Context.MODE_PRIVATE);
+    }
+
+    @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         if (getArguments() != null) {
@@ -75,8 +81,32 @@ public class PostIndexFragment extends Fragment {
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
+        if (savedInstanceState != null) {
+            currentPage = savedInstanceState.getInt("current_page");
+        }
         initializeRecyclerView(savedInstanceState);
-        refreshPostData();
+        restorePostData();
+
+        if (postItemsData == null) {
+            refreshPostData();
+        }
+        else {
+            initializeRecyclerAdapter(postItemsData);
+        }
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        if (postItemsData!=null) {
+            //outState.putParcelable("post_layout_manager_state", mRecyclerView.getLayoutManager().onSaveInstanceState());
+            outState.putInt("current_page", currentPage);
+
+            SharedPreferences.Editor editor = sharedPref.edit();
+            editor.putString("post_data", postItemsData.toString());
+            editor.apply();
+        }
+
     }
 
     private int getNumberOfColumns() {
@@ -115,6 +145,8 @@ public class PostIndexFragment extends Fragment {
             if (postDataString != null) {
                 postItemsData = new JSONArray(postDataString);
             }
+            Log.e("DEBUG", "postDataString -> "+postDataString);
+            Log.e("DEBUG", "postItemsData -> "+postItemsData);
         } catch (JSONException e) {
             Log.e("ActivitySharedPrefs", "post_data: "+e.toString());
         }

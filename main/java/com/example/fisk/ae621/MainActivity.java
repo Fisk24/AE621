@@ -51,16 +51,6 @@ public class MainActivity extends AppCompatActivity implements ApiDelegate.ApiCa
 
         mLdMainStatus = findViewById(R.id.ld_main_status);
 
-        /*
-        //initializeSharedPreferences();
-        sharedPref = getPreferences(Context.MODE_PRIVATE);
-
-        if (savedInstanceState != null) {
-            currentPage = savedInstanceState.getInt("current_page");
-            //restorePostData();
-        }
-        */
-
         // DONT recreate the fragment if it already exists (useful for configuration changes)
 
         FragmentManager fm = getSupportFragmentManager();
@@ -73,26 +63,6 @@ public class MainActivity extends AppCompatActivity implements ApiDelegate.ApiCa
 
             mLdMainStatus.setText("Trying to reach e621.net");
         }
-    }
-
-    @Override
-    public void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        /*
-        if (postItemsData!=null) {
-            //outState.putParcelable("post_layout_manager_state", mRecyclerView.getLayoutManager().onSaveInstanceState());
-            outState.putInt("current_page", currentPage);
-
-            SharedPreferences.Editor editor = sharedPref.edit();
-            editor.putString("post_data", postItemsData.toString());
-            editor.commit();
-        }
-        */
-    }
-
-    @Override
-    public void onRestoreInstanceState(Bundle savedInstanceState) {
-
     }
 
     @Override

@@ -99,6 +99,11 @@ public class PostActivity extends AppCompatActivity implements PostItemAdapter.P
     }
 
     @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+    }
+
+    @Override
     public void onBackPressed() {
         int pagerCurrent = mViewPager.getCurrentItem();
         if (pagerCurrent != 0) {
@@ -317,7 +322,6 @@ public class PostActivity extends AppCompatActivity implements PostItemAdapter.P
         public Fragment getItem(int position) {
             switch (position) {
                 case 0:
-                    //TODO: Can we keep a copy of this object in the parent class? If so we might not be forced to reload it every time.
                     return PostIndexFragment.newInstance();
                 default:
                     try {
