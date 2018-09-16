@@ -105,7 +105,8 @@
                     android:layout_marginTop="10dp"
                     android:background="@drawable/rounded_background_secondary"
                     android:orientation="vertical"
-                    android:padding="10dp">
+                    android:padding="10dp"
+                    android:elevation="8dp">
 
                     <TextView
                         android:id="@+id/pvDescriptionHeader"

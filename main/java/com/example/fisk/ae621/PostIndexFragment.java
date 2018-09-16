@@ -31,6 +31,8 @@ import javax.net.ssl.SSLHandshakeException;
 
 public class PostIndexFragment extends Fragment {
 
+    //TODO: NEXT: PostIndexFragment MUST utilize the ApiDelegate's new paradigm
+    //TODO: Im sick of all this scat and diapers that i have to see while testing! Its bullshit implement the login activity already!
     //TODO: When network operations fail this fragment should changed its layout file to the error layout
 
     private JSONArray postItemsData;

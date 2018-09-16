@@ -158,6 +158,8 @@ public class PostViewFragment extends Fragment {
             setDescriptionWidgets();
         }
 
+        mDescriptionBody.setTranslationX((float) 10.0);
+
         return rootView;
     }
 

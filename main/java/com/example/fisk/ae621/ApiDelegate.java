@@ -1,6 +1,8 @@
 package com.example.fisk.ae621;
 
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
@@ -9,6 +11,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.util.Log;
+import android.widget.Toast;
 
 import org.json.JSONArray;
 import org.json.JSONException;

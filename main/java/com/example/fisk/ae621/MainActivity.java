@@ -1,8 +1,10 @@
 package com.example.fisk.ae621;
 
 import android.app.SearchManager;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -38,7 +40,22 @@ import java.net.InetAddress;
 
 public class MainActivity extends AppCompatActivity implements ApiDelegate.ApiCallback {
 
+    //TODO: Instead of doing something useless like polling the server, Lets preload the first page, login if required, preload the recent posts data
+    //TODO: Routine to decide which data connection to use
+
     private ApiDelegate apiDelegate;
+
+    public static final String WIFI = "Wi-Fi";
+    public static final String ANY = "Any";
+
+    // Whether there is a Wi-Fi connection.
+    private static boolean wifiConnected = false;
+    // Whether there is a mobile connection.
+    private static boolean mobileConnected = false;
+    // Whether the display should be refreshed.
+    public static boolean refreshDisplay = true;
+
+    private NetworkReceiver netRecv;
 
     private TextView mLdMainStatus;
 
@@ -50,6 +67,7 @@ public class MainActivity extends AppCompatActivity implements ApiDelegate.ApiCa
         setContentView(R.layout.activity_main);
 
         mLdMainStatus = findViewById(R.id.ld_main_status);
+        mLdMainStatus.setText("Trying to reach e621.net");
 
         // DONT recreate the fragment if it already exists (useful for configuration changes)
 
@@ -59,10 +77,17 @@ public class MainActivity extends AppCompatActivity implements ApiDelegate.ApiCa
         if (apiDelegate == null) {
             apiDelegate = ApiDelegate.getInstance(fm);
             apiDelegate.setApiCallback(this);
-            apiDelegate.performQueryById(ApiDelegate.POLL_REQUEST);
-
-            mLdMainStatus.setText("Trying to reach e621.net");
         }
+
+        Handler handler = new Handler();
+        Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                //TODO: Really do something here
+                gotoPostActivity();
+            }
+        };
+        handler.postDelayed(runnable, 1000);
     }
 
     @Override
@@ -82,11 +107,43 @@ public class MainActivity extends AppCompatActivity implements ApiDelegate.ApiCa
     public void onApiResponse(ApiDelegate.ApiResponse apiResponse) {
         Log.e("DEBUG", "onApiResponse: "+apiResponse.wasSuccess());
         if (apiResponse.wasSuccess()) {
-            //mLdMainStatus.setText("Success!");
+            mLdMainStatus.setText("Success!");
             gotoPostActivity();
         } else {
             //Log.e("DEBUG", "No really it was!");
             mLdMainStatus.setText("Check connection...");
+        }
+    }
+
+    public class NetworkReceiver extends BroadcastReceiver {
+
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            ConnectivityManager conn = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+            NetworkInfo networkInfo = conn.getActiveNetworkInfo();
+
+            // Checks the user prefs and the network connection. Based on the result, decides whether
+            // to refresh the display or keep the current display.
+            // If the userpref is Wi-Fi only, checks to see if the device has a Wi-Fi connection.
+            if (networkInfo != null && networkInfo.getType() == ConnectivityManager.TYPE_WIFI) {
+                // If device has its Wi-Fi connection, sets refreshDisplay
+                // to true. This causes the display to be refreshed when the user
+                // returns to the app.
+                Toast.makeText(context, "wifi connected", Toast.LENGTH_SHORT).show();
+                apiDelegate.performQueryById(ApiDelegate.POLL_REQUEST);
+
+                // If the setting is ANY network and there is a network connection
+                // (which by process of elimination would be mobile), sets refreshDisplay to true.
+            } else if (networkInfo != null) {
+                // Otherwise, the app can't download content--either because there is no network
+                // connection (mobile or Wi-Fi), or because the pref setting is WIFI, and there
+                // is no Wi-Fi connection.
+                // Sets refreshDisplay to false.
+                apiDelegate.performQueryById(ApiDelegate.POLL_REQUEST);
+            } else {
+                refreshDisplay = false;
+                Toast.makeText(context, "no connection", Toast.LENGTH_SHORT).show();
+            }
         }
     }
 
